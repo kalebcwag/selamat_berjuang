@@ -10,6 +10,8 @@ import cv2 as cv
 import numpy as np
 import mediapipe as mp
 
+import simpleaudio as sa
+
 from utils import CvFpsCalc
 from model import KeyPointClassifier
 from model import PointHistoryClassifier
@@ -140,7 +142,7 @@ def main():
 
                 # Hand sign classification
                 hand_sign_id = keypoint_classifier(pre_processed_landmark_list)
-                if hand_sign_id == 2:  # Point gesture
+                if hand_sign_id == "Not applicable":  # Point gesture
                     point_history.append(landmark_list[8])
                 else:
                     point_history.append([0, 0])
@@ -167,6 +169,14 @@ def main():
                     keypoint_classifier_labels[hand_sign_id],
                     point_history_classifier_labels[most_common_fg_id[0][0]],
                 )
+                
+                aud = keypoint_classifier_labels[hand_sign_id]
+                last_aud = ""
+                
+                if aud != last_aud:
+                    play_audio(aud)
+                    last_aud = aud
+                
         else:
             point_history.append([0, 0])
 
@@ -178,6 +188,18 @@ def main():
 
     cap.release()
     cv.destroyAllWindows()
+    
+
+def play_audio(status):
+    sound_path = "audio/"
+    if status=="Selamat":
+        playsound(sound_path+"selamat.mp3")
+    elif status=="Berjuang":
+        playsound(sound_path+"berjuang.mp3")
+    elif status=="Sukses":
+        playsound(sound_path+"sukses.mp3")
+    elif status=="Hidup":
+        playsound(sound_path+"hidup.mp3")
 
 
 def select_mode(key, mode):
