@@ -6,3 +6,6 @@ Sekalian belajar MediaPipe dan matengin skill AI :3<br>
 
 Inspo:<br>
 https://youtu.be/a99p_fAr6e4?si=uKg--GXYz104CVmy
+
+## Found problems:
+### Mediapipe and Tensorflow protobuf conflict
