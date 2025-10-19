@@ -10,11 +10,23 @@ import cv2 as cv
 import numpy as np
 import mediapipe as mp
 
-import simpleaudio as sa
+import pygame
+pygame.mixer.init()
+SOUNDS = {
+    "Selamat": pygame.mixer.Sound("audio/selamat.wav"),
+    "Berjuang": pygame.mixer.Sound("audio/berjuang.wav"),
+    "Sukses": pygame.mixer.Sound("audio/sukses.wav"),
+    "Hidup": pygame.mixer.Sound("audio/hidup.wav"),
+}
 
 from utils import CvFpsCalc
 from model import KeyPointClassifier
 from model import PointHistoryClassifier
+
+FPS_TARGET = 5
+STABILIZATION_FRAME = FPS_TARGET * 1
+
+stabilization_hist = []
 
 
 def get_args():
@@ -99,6 +111,8 @@ def main():
     #  ########################################################################
     mode = 0
 
+    last_aud = ""
+
     while True:
         fps = cvFpsCalc.get()
 
@@ -171,14 +185,25 @@ def main():
                 )
                 
                 aud = keypoint_classifier_labels[hand_sign_id]
-                last_aud = ""
                 
-                if aud != last_aud:
-                    play_audio(aud)
-                    last_aud = aud
+                stabilization_hist.append(aud)
+                
+                if len(stabilization_hist) > STABILIZATION_FRAME:
+                    stabilization_hist.pop(0)
+                    
+                if len(stabilization_hist) == STABILIZATION_FRAME:
+                    most_common_aud_tuple = Counter(stabilization_hist).most_common(1)
+                    stabilized_aud = most_common_aud_tuple[0][0] # Ambil gestur dari tuple
+
+                    if stabilized_aud != last_aud:
+                        play_audio(stabilized_aud)
+                        last_aud = stabilized_aud
                 
         else:
             point_history.append([0, 0])
+            stabilization_hist = []
+            last_aud = ""
+            
 
         debug_image = draw_point_history(debug_image, point_history)
         debug_image = draw_info(debug_image, fps, mode, number)
@@ -191,15 +216,8 @@ def main():
     
 
 def play_audio(status):
-    sound_path = "audio/"
-    if status=="Selamat":
-        playsound(sound_path+"selamat.mp3")
-    elif status=="Berjuang":
-        playsound(sound_path+"berjuang.mp3")
-    elif status=="Sukses":
-        playsound(sound_path+"sukses.mp3")
-    elif status=="Hidup":
-        playsound(sound_path+"hidup.mp3")
+    if status in SOUNDS and not pygame.mixer.get_busy():
+        SOUNDS[status].play()
 
 
 def select_mode(key, mode):
